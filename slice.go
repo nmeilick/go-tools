@@ -2,6 +2,7 @@ package tools
 
 import (
 	"strings"
+	"unicode"
 )
 
 type MapFunc[T any] func(T) T
@@ -64,7 +65,9 @@ func Unique[T comparable](vv []T) (result []T) {
 }
 
 type Lenable interface {
-	~string | ~[]string | ~[]any | ~map[any]any | []map[any]any | ~[]int | ~[]int8 | ~[]int16 | ~[]int32 | ~[]int64 | ~[]uint | ~[]uint8 | ~[]uint16 | ~[]uint32 | ~[]uint64 | ~[]uintptr | ~[]float32 | ~[]float64 | ~[]complex64 | ~[]complex128
+	~string | ~[]string | ~[]any | ~[]bool |
+		~[]int | ~[]int8 | ~[]int16 | ~[]int32 | ~[]int64 | ~[]uint | ~[]uint8 | ~[]uint16 | ~[]uint32 | ~[]uint64 |
+		~[]uintptr | ~[]float32 | ~[]float64 | ~[]complex64 | ~[]complex128
 }
 
 // Prune returns a slice with all empty elements removed.
@@ -102,17 +105,43 @@ func Includes[T comparable](vv []T, v T) bool {
 	return false
 }
 
-// ToLower returns a slice with all strings converted to lowercase.
-func ToLower(ss []string) []string {
-	return Map(ss, strings.ToLower)
+// Tokens splits to given string types at whitespace or comma and returns lower-cased unique values.
+func Tokens[T ~string](vv ...T) []T {
+	split := func(r rune) bool {
+		return unicode.IsSpace(r) || r == ','
+	}
+
+	tokens := []T{}
+	seen := map[string]bool{}
+	for _, v := range vv {
+		for _, s := range strings.FieldsFunc(string(v), split) {
+			if s = strings.ToLower(s); !seen[s] {
+				seen[s] = true
+				tokens = append(tokens, T(s))
+			}
+		}
+	}
+	return tokens
 }
 
-// ToLower returns a slice with all strings converted to uppercase.
-func ToUpper(ss []string) []string {
-	return Map(ss, strings.ToUpper)
+// Define a function type that takes a Key and returns a Key and Value.
+type KeyValueGenerator[K comparable, V any] func(K) (K, V)
+
+// ToMap returns a map where each entry is the result of the generator function.
+// Empty keys are ignored.
+func ToMap[K comparable, V any](keys []K, gen KeyValueGenerator[K, V]) map[K]V {
+	m := map[K]V{}
+	var zero K
+	for _, key := range keys {
+		key, val := gen(key)
+		if key != zero {
+			m[key] = val
+		}
+	}
+	return m
 }
 
-// TrimSpace returns a slice with all strings trimmed of leading and trailing whitespace.
-func TrimSpace(ss []string) []string {
-	return Map(ss, strings.TrimSpace)
+// ToMapWithValue returns a map with each key set to the given value.
+func ToMapWithValue[K comparable, V any](keys []K, v V) map[K]V {
+	return ToMap(keys, func(k K) (K, V) { return k, v })
 }
