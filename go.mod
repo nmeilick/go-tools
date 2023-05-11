@@ -2,4 +2,4 @@ module github.com/nmeilick/go-tools
 
 go 1.20
 
-require github.com/pkg/errors v0.9.1
+require golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
