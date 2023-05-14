@@ -55,7 +55,7 @@ func ResolveFiles(path string) ([]string, error) {
 	return files, nil
 }
 
-func saveFile(file string, f func(w io.Writer) error, perm os.FileMode) error {
+func SaveFileFunc(file string, f func(w io.Writer) error, perm os.FileMode) error {
 	dir := filepath.Dir(file)
 	tmp, err := os.CreateTemp(dir, "."+filepath.Base(file))
 	if err != nil {
@@ -99,7 +99,7 @@ func SaveFile(file string, data []byte, perm os.FileMode) error {
 		_, err := w.Write(data)
 		return err
 	}
-	return saveFile(file, f, perm)
+	return SaveFileFunc(file, f, perm)
 }
 
 // SaveJSON safely writes JSON encoded data to a file by encoding the given value to a temporary file first
@@ -112,7 +112,7 @@ func SaveJSON(file string, v interface{}, indented bool, perm os.FileMode) error
 		}
 		return enc.Encode(v)
 	}
-	return saveFile(file, f, perm)
+	return SaveFileFunc(file, f, perm)
 }
 
 // LoadJSON decodes JSON read from the given file.
